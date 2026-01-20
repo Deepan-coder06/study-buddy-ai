@@ -9,6 +9,7 @@ import StudyPlanner from '@/components/study/StudyPlanner';
 import AIChat from '@/components/chat/AIChat';
 import ProfileTab from '@/components/profile/ProfileTab';
 import Notification from '@/components/ui/Notification';
+import { sendChatMessage, generateInsight, generateStudyPlan } from '@/lib/api';
 
 type TabType = 'profile' | 'dashboard' | 'study' | 'safety' | 'chat';
 
@@ -99,47 +100,38 @@ const Index = () => {
     handleVoicesChanged();
   }, []);
 
-  // AI Functions (simulated - in production, these would call your backend)
-  const simulateAIResponse = async (prompt: string): Promise<string> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Simple response simulation
-    if (prompt.toLowerCase().includes('sleep')) {
-      return `Based on your ${sleepHours} hours of sleep, I recommend taking a 20-minute power nap around 2 PM to boost your afternoon productivity.`;
-    }
-    if (prompt.toLowerCase().includes('study') || prompt.toLowerCase().includes('plan')) {
-      return "I'd recommend using the Pomodoro technique: 25 minutes of focused study followed by 5-minute breaks. This helps maintain concentration!";
-    }
-    if (prompt.toLowerCase().includes('stress') || prompt.toLowerCase().includes('anxious')) {
-      return "I hear you. Try the 4-7-8 breathing technique: breathe in for 4 seconds, hold for 7, exhale for 8. Would you like me to guide you through it?";
-    }
-    return "I'm here to help! You can ask me about study tips, sleep optimization, stress management, or anything else on your mind.";
-  };
-
+  // AI Functions - Now using real Gemini API via Edge Functions
   const handleGenerateInsight = async () => {
     setLoadingInsight(true);
-    const insight = await simulateAIResponse(`sleep ${sleepHours} energy ${energyLevel}`);
-    setDailyInsight(insight);
-    speakText(insight);
+    try {
+      const insight = await generateInsight(sleepHours, energyLevel);
+      setDailyInsight(insight);
+      speakText(insight);
+    } catch (error) {
+      console.error("Failed to generate insight:", error);
+      triggerNotification("Could not generate insight. Try again.");
+    }
     setLoadingInsight(false);
   };
 
   const handleGeneratePlan = async (topic: string) => {
     setLoadingPlan(true);
-    
-    // Simulate AI generating tasks
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newTasks: Task[] = [
-      { id: Date.now(), title: `Review basics of ${topic}`, priority: 'High', completed: false },
-      { id: Date.now() + 1, title: `Practice ${topic} exercises`, priority: 'Medium', completed: false },
-      { id: Date.now() + 2, title: `Create summary notes for ${topic}`, priority: 'Low', completed: false },
-    ];
-    
-    setTasks(prev => [...prev, ...newTasks]);
-    triggerNotification("✨ Study plan created!");
-    speakText(`I've created a study plan for ${topic}. Good luck!`);
+    try {
+      const planTasks = await generateStudyPlan(topic);
+      const newTasks: Task[] = planTasks.map((t, idx) => ({
+        id: Date.now() + idx,
+        title: t.title,
+        priority: t.priority,
+        completed: false,
+      }));
+      
+      setTasks(prev => [...prev, ...newTasks]);
+      triggerNotification("✨ Study plan created!");
+      speakText(`I've created a study plan for ${topic}. Good luck!`);
+    } catch (error) {
+      console.error("Failed to generate plan:", error);
+      triggerNotification("Failed to create plan. Please try again.");
+    }
     setLoadingPlan(false);
   };
 
@@ -157,11 +149,16 @@ const Index = () => {
     }
 
     setIsAiThinking(true);
-    const response = await simulateAIResponse(message);
+    try {
+      const response = await sendChatMessage(newHistory, userName, sleepHours, attachment);
+      setChatHistory([...newHistory, { role: 'model', text: response }]);
+      speakText(response);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatHistory([...newHistory, { role: 'model', text: "I'm having trouble connecting. Please try again." }]);
+      triggerNotification("Connection error. Please try again.");
+    }
     setIsAiThinking(false);
-
-    setChatHistory([...newHistory, { role: 'model', text: response }]);
-    speakText(response);
   };
 
   const handleVoiceInput = () => {
