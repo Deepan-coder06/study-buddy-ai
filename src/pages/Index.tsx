@@ -9,7 +9,7 @@ import StudyPlanner from '@/components/study/StudyPlanner';
 import AIChat from '@/components/chat/AIChat';
 import ProfileTab from '@/components/profile/ProfileTab';
 import Notification from '@/components/ui/Notification';
-import { sendChatMessage, generateInsight, generateStudyPlan } from '@/lib/api';
+import { sendChatMessage, generateInsight, generateStudyPlan, generateStudyPlanAlternate } from '@/lib/api';
 
 type TabType = 'profile' | 'dashboard' | 'study' | 'safety' | 'chat';
 
@@ -78,6 +78,22 @@ const Index = ({ user, onLogin }: IndexProps) => {
     }
   }, [user]);
 
+  // Centralized Task Functions
+  const toggleTask = (id: number) => {
+    setTasks(currentTasks =>
+      currentTasks.map(t => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+  };
+
+  const addTask = () => {
+    const newTask: Task = {
+        id: Date.now(),
+        title: "New Task",
+        priority: "Medium",
+        completed: false,
+    };
+    setTasks(currentTasks => [...currentTasks, newTask]);
+  };
 
   // Helper Functions
   const triggerNotification = (msg: string) => {
@@ -111,7 +127,7 @@ const Index = ({ user, onLogin }: IndexProps) => {
     handleVoicesChanged();
   }, []);
 
-  // AI Functions - Now using real Gemini API via Edge Functions
+  // AI Functions
   const handleGenerateInsight = async () => {
     setLoadingInsight(true);
     try {
@@ -128,17 +144,20 @@ const Index = ({ user, onLogin }: IndexProps) => {
   const handleGeneratePlan = async (topic: string) => {
     setLoadingPlan(true);
     try {
-      const planTasks = await generateStudyPlan(topic);
-      const newTasks: Task[] = planTasks.map((t, idx) => ({
-        id: Date.now() + idx,
-        title: t.title,
-        priority: t.priority,
-        completed: false,
-      }));
-      
-      setTasks(prev => [...prev, ...newTasks]);
-      triggerNotification("✨ Study plan created!");
-      speakText(`I've created a study plan for ${topic}. Good luck!`);
+      const planTasks = await generateStudyPlanAlternate(topic);
+      if (planTasks && planTasks.length > 0) {
+        const newTasks: Task[] = planTasks.map((t, idx) => ({
+          id: Date.now() + idx,
+          title: t.title,
+          priority: t.priority,
+          completed: false,
+        }));
+        setTasks(newTasks);
+        triggerNotification("✨ Study plan created!");
+        speakText(`I've created a study plan for ${topic}. Good luck!`);
+      } else {
+        triggerNotification("AI couldn't generate a plan for that topic. Try another one!");
+      }
     } catch (error) {
       console.error("Failed to generate plan:", error);
       triggerNotification("Failed to create plan. Please try again.");
@@ -153,7 +172,6 @@ const Index = ({ user, onLogin }: IndexProps) => {
     const newHistory: Message[] = [...chatHistory, { role: 'user', text: displayMessage }];
     setChatHistory(newHistory);
 
-    // Check for emergency keywords
     if (message.toLowerCase().includes('emergency') || message.toLowerCase().includes('sos')) {
       setIsSOSActive(true);
       triggerNotification("Emergency Protocol Initiated");
@@ -223,7 +241,6 @@ const Index = ({ user, onLogin }: IndexProps) => {
     triggerNotification("Profile Updated Successfully!");
   };
 
-  // Render Auth Screen
   if (!user) {
     return (
       <>
@@ -233,12 +250,10 @@ const Index = ({ user, onLogin }: IndexProps) => {
     );
   }
 
-  // Render SOS Screen
   if (isSOSActive) {
     return <SOSScreen onDismiss={() => setIsSOSActive(false)} />;
   }
 
-  // Main App
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground md:cursor-none">
       <FluidCursor />
