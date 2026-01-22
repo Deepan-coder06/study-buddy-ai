@@ -29,10 +29,10 @@ const Dashboard = ({
     <div className="space-y-6 animate-slide-in-bottom">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Welcome Card & AI Insight */}
-        <div className="glass-card p-6 flex flex-col justify-between">
+        <div className="glass-card p-4 sm:p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Welcome Back, {userName}! 🎓</h2>
-            <p className="text-muted-foreground mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Welcome Back, {userName}! 🎓</h2>
+            <p className="text-muted-foreground mb-3 sm:mb-4">
               {dailyInsight || "Your AI analysis suggests a productive evening based on your energy levels."}
             </p>
           </div>
@@ -47,15 +47,15 @@ const Dashboard = ({
         </div>
 
         {/* Sleep Tracker */}
-        <div className="glass-card p-6 flex flex-col justify-between">
+        <div className="glass-card p-4 sm:p-6 flex flex-col justify-between">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Moon className="text-accent" /> Sleep Tracker
               </h3>
-              <p className="text-3xl font-bold mt-2">{sleepHours} hrs</p>
+              <p className="text-2xl sm:text-3xl font-bold mt-2">{sleepHours} hrs</p>
             </div>
-            <div className="h-16 w-16 rounded-full border-4 border-accent flex items-center justify-center bg-accent/10">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full border-4 border-accent flex items-center justify-center bg-accent/10 flex-shrink-0">
               <span className="text-sm font-bold">{sleepPercentage}%</span>
             </div>
           </div>
@@ -73,24 +73,24 @@ const Dashboard = ({
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-4 text-center hover:scale-105 transition-transform">
+        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
           <Activity className="mx-auto text-success mb-2" />
-          <div className="text-2xl font-bold">{energyLevel}%</div>
+          <div className="text-xl sm:text-2xl font-bold">{energyLevel}%</div>
           <div className="text-xs text-muted-foreground">Energy</div>
         </div>
-        <div className="glass-card p-4 text-center hover:scale-105 transition-transform">
+        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
           <CheckCircle2 className="mx-auto text-primary mb-2" />
-          <div className="text-2xl font-bold">{completedTasks}/{tasks.length}</div>
+          <div className="text-xl sm:text-2xl font-bold">{completedTasks}/{tasks.length}</div>
           <div className="text-xs text-muted-foreground">Tasks</div>
         </div>
-        <div className="glass-card p-4 text-center hover:scale-105 transition-transform">
+        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
           <Brain className="mx-auto text-accent mb-2" />
-          <div className="text-2xl font-bold">Normal</div>
+          <div className="text-xl sm:text-2xl font-bold">Normal</div>
           <div className="text-xs text-muted-foreground">Stress</div>
         </div>
-        <div className="glass-card p-4 text-center hover:scale-105 transition-transform">
+        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
           <Coffee className="mx-auto text-warning mb-2" />
-          <div className="text-2xl font-bold">2</div>
+          <div className="text-xl sm:text-2xl font-bold">2</div>
           <div className="text-xs text-muted-foreground">Breaks</div>
         </div>
       </div>

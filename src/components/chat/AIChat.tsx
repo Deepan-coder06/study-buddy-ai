@@ -45,12 +45,7 @@ const AIChat = ({
     const reader = new FileReader();
     const isImage = file.type.startsWith('image/');
     const isPdf = file.type === 'application/pdf';
-    const isText = file.type === 'text/plain' || 
-                   file.name.endsWith('.txt') || 
-                   file.name.endsWith('.md') || 
-                   file.name.endsWith('.js') || 
-                   file.name.endsWith('.py') ||
-                   file.name.endsWith('.json');
+    const isText = file.type.startsWith('text/') || file.name.endsWith('.md');
 
     reader.onload = (event) => {
       setAttachment({
@@ -76,8 +71,7 @@ const AIChat = ({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] md:h-[600px] animate-fade-in relative">
-      {/* Controls Bar */}
+    <div className="flex flex-col h-[calc(100vh-160px)] sm:h-[calc(100vh-220px)] md:h-[600px] animate-fade-in relative">
       <div className="absolute top-0 right-4 flex items-center gap-2 z-10">
         <button 
           onClick={onToggleTts}
@@ -88,11 +82,10 @@ const AIChat = ({
         </button>
       </div>
 
-      {/* Chat Messages */}
-      <div className="flex-1 glass-card p-4 overflow-y-auto space-y-4 mb-4 mt-8 md:mt-0">
+      <div className="flex-1 glass-card p-2 sm:p-4 overflow-y-auto space-y-4 mb-4 mt-10 md:mt-0">
         {chatHistory.map((msg, idx) => (
           <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] p-3 rounded-2xl ${
+            <div className={`max-w-[85%] p-2.5 sm:p-3 rounded-2xl shadow-sm ${
               msg.role === 'user' 
                 ? 'bg-gradient-primary text-primary-foreground rounded-br-none' 
                 : 'bg-secondary text-foreground rounded-bl-none'
@@ -117,33 +110,23 @@ const AIChat = ({
         )}
       </div>
 
-      {/* Attachment Preview */}
       {attachment && (
-        <div className="absolute bottom-20 left-0 ml-2 mb-2 glass-card p-2 flex items-center gap-3 animate-scale-in z-20">
+        <div className="absolute bottom-[72px] sm:bottom-24 left-0 ml-2 mb-2 glass-card p-2 flex items-center gap-3 animate-scale-in z-20">
           <div className="w-8 h-8 bg-secondary rounded flex items-center justify-center">
-            {attachment.type.startsWith('image/') ? (
+            {attachment.category === 'image' ? (
               <img src={attachment.data} alt="preview" className="w-full h-full object-cover rounded" />
             ) : (
               <FileText size={16} className="text-muted-foreground" />
             )}
           </div>
-          <div className="text-xs text-muted-foreground truncate max-w-[150px]">{attachment.name}</div>
+          <div className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[150px]">{attachment.name}</div>
           <button onClick={() => setAttachment(null)} className="hover:text-foreground text-muted-foreground">
             <X size={14} />
           </button>
         </div>
       )}
 
-      {/* Input Area */}
       <div className="flex gap-2 relative items-center">
-        <input 
-          type="file" 
-          hidden 
-          ref={fileInputRef} 
-          onChange={handleFileSelect}
-          accept="image/*,.txt,.pdf,.doc,.docx"
-        />
-        
         <button 
           onClick={() => fileInputRef.current?.click()}
           className="p-3 glass-card text-muted-foreground hover:text-foreground transition-colors"
@@ -157,8 +140,8 @@ const AIChat = ({
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder="Ask advice, upload file, or say help..."
-          className="flex-1 bg-input border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+          placeholder="Ask or upload a file..."
+          className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm sm:text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           disabled={isAiThinking}
         />
         
@@ -176,10 +159,11 @@ const AIChat = ({
         <button 
           onClick={handleSubmit}
           disabled={isAiThinking || (!chatInput.trim() && !attachment)}
-          className="p-3 bg-gradient-primary text-primary-foreground rounded-xl transition-all hover:opacity-90 disabled:opacity-50"
+          className="p-3 bg-gradient-primary text-primary-foreground rounded-xl transition-all hover:opacity-90 disabled:opacity-50 flex-shrink-0"
         >
           <Send size={24} />
         </button>
+        <input type="file" hidden ref={fileInputRef} onChange={handleFileSelect} accept="image/*,.txt,.md,.pdf"/>
       </div>
       
       <p className="text-xs text-center text-muted-foreground mt-2">

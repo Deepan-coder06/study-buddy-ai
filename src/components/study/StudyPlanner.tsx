@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Sparkles, X, CheckCircle2, Loader2, Brain } from 'lucide-react';
+import { useMobile } from '@/hooks/use-mobile';
 
 interface Task {
   id: number;
@@ -19,6 +20,7 @@ interface StudyPlannerProps {
 const StudyPlanner = ({ tasks, setTasks, sleepHours, onGeneratePlan, loadingPlan }: StudyPlannerProps) => {
   const [showPlanInput, setShowPlanInput] = useState(false);
   const [planTopic, setPlanTopic] = useState('');
+  const isMobile = useMobile();
 
   const toggleTask = (id: number) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
@@ -43,35 +45,34 @@ const StudyPlanner = ({ tasks, setTasks, sleepHours, onGeneratePlan, loadingPlan
   const getPriorityStyles = (priority: string) => {
     switch (priority) {
       case 'High':
-        return 'bg-destructive/20 text-destructive';
+        return 'bg-destructive/20 text-destructive-foreground';
       case 'Medium':
-        return 'bg-warning/20 text-warning';
+        return 'bg-warning/20 text-warning-foreground';
       default:
-        return 'bg-success/20 text-success';
+        return 'bg-success/20 text-success-foreground';
     }
   };
 
   return (
     <div className="space-y-4 animate-slide-in-bottom">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">AI Study Plan</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">AI Study Plan</h2>
         <div className="flex gap-2">
           <button 
             onClick={() => setShowPlanInput(!showPlanInput)}
-            className="bg-accent/20 hover:bg-accent/30 border border-accent/50 text-accent-foreground px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-1"
+            className="bg-accent/20 hover:bg-accent/30 border border-accent/50 text-accent-foreground px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2"
           >
-            <Sparkles size={16} /> Magic Plan
+            <Sparkles size={16} /> {!isMobile && 'Magic Plan'}
           </button>
           <button 
             onClick={addNewTask}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-1"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2"
           >
-            <Plus size={16} /> Add
+            <Plus size={16} /> {!isMobile && 'Add'}
           </button>
         </div>
       </div>
       
-      {/* AI Plan Input */}
       {showPlanInput && (
         <div className="glass-card p-4 border-accent/50 mb-4 animate-slide-in-bottom">
           <div className="flex justify-between items-center mb-2">
@@ -85,7 +86,7 @@ const StudyPlanner = ({ tasks, setTasks, sleepHours, onGeneratePlan, loadingPlan
               type="text" 
               value={planTopic}
               onChange={(e) => setPlanTopic(e.target.value)}
-              placeholder="e.g., 'Master Python Basics' or 'Calculus Revision'"
+              placeholder="e.g., 'Calculus Revision'"
               className="flex-1 bg-input border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
               onKeyDown={(e) => e.key === 'Enter' && handleGeneratePlan()}
             />
@@ -101,17 +102,16 @@ const StudyPlanner = ({ tasks, setTasks, sleepHours, onGeneratePlan, loadingPlan
         </div>
       )}
 
-      {/* Task List */}
       {tasks.map(task => (
         <div 
           key={task.id} 
           onClick={() => toggleTask(task.id)}
-          className={`glass-card p-4 flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01] ${
-            task.completed ? 'opacity-50' : ''
+          className={`glass-card p-3 sm:p-4 flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01] ${
+            task.completed ? 'opacity-60' : ''
           }`}
         >
-          <div className="flex items-center gap-4">
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
               task.completed ? 'bg-success border-success' : 'border-muted-foreground'
             }`}>
               {task.completed && <CheckCircle2 size={16} className="text-success-foreground" />}
@@ -125,20 +125,19 @@ const StudyPlanner = ({ tasks, setTasks, sleepHours, onGeneratePlan, loadingPlan
               </span>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground hidden sm:block">
             {task.completed ? 'Done' : 'Pending'}
           </div>
         </div>
       ))}
       
-      {/* AI Suggestion */}
-      <div className="glass-card p-4 border-accent/30 mt-8">
+      <div className="glass-card p-4 border-accent/30 mt-6 sm:mt-8">
         <h3 className="text-accent font-bold mb-2 flex items-center gap-2">
           <Brain size={18} /> AI Suggestion
         </h3>
         <p className="text-sm text-muted-foreground">
           Based on your sleep log of {sleepHours} hours, your concentration might dip around 3 PM. 
-          Schedule your "High Priority" tasks right now while your cognitive load is fresh.
+          Schedule your "High Priority" tasks while your cognitive load is fresh.
         </p>
       </div>
     </div>

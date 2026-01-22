@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
+
 
 export default {
   darkMode: ["class"],
@@ -86,22 +88,17 @@ export default {
           to: { opacity: "1" },
         },
         "scale-in": {
-          from: { transform: "scale(0.95)", opacity: "0" },
+          from: { transform: "scale(0.98)", opacity: "0" },
           to: { transform: "scale(1)", opacity: "1" },
-        },
-        "bounce-subtle": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-5px)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "slide-in-right": "slide-in-right 0.3s ease-out",
-        "slide-in-bottom": "slide-in-bottom 0.4s ease-out",
-        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in-right": "slide-in-right 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "slide-in-bottom": "slide-in-bottom 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+        "fade-in": "fade-in 0.3s ease-in-out",
         "scale-in": "scale-in 0.2s ease-out",
-        "bounce-subtle": "bounce-subtle 2s ease-in-out infinite",
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
@@ -110,5 +107,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 } satisfies Config;

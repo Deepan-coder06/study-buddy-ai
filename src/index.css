@@ -4,55 +4,48 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 40 50% 98%;
+    --foreground: 20 14% 18%;
 
-    --card: 222 47% 14%;
-    --card-foreground: 210 40% 98%;
+    --card: 38 22% 94%;
+    --card-foreground: 20 14% 22%;
 
-    --popover: 222 47% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 40 50% 98%;
+    --popover-foreground: 20 14% 18%;
 
-    --primary: 187 92% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 215 80% 65%;
+    --primary-foreground: 40 50% 99%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 38 22% 88%;
+    --secondary-foreground: 20 14% 22%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 38 22% 92%;
+    --muted-foreground: 20 10% 45%;
 
-    --accent: 259 94% 51%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 12 80% 65%;
+    --accent-foreground: 40 50% 99%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 50% 99%;
+    
+    --success: 142 71% 45%;
+    --success-foreground: 40 50% 99%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
-
-    --border: 217 33% 25%;
-    --input: 217 33% 20%;
-    --ring: 187 92% 50%;
+    --warning-foreground: 20 14% 22%;
+    
+    --border: 38 22% 88%;
+    --input: 38 22% 91%;
+    --ring: 215 80% 65%;
 
     --radius: 0.75rem;
-
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(187 92% 50%), hsl(217 91% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(259 94% 51%), hsl(187 92% 50%));
-    --gradient-glass: linear-gradient(135deg, hsl(222 47% 16% / 0.8), hsl(222 47% 12% / 0.6));
-
-    /* Shadows */
-    --shadow-glow: 0 0 30px hsl(187 92% 50% / 0.2);
-    --shadow-card: 0 8px 32px hsl(222 47% 5% / 0.5);
   }
 
   .dark {
+    /* Keeping dark mode variables for potential future use */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
+    /* ... (rest of the dark mode variables can be defined here if needed) */
   }
 }
 
@@ -64,62 +57,55 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    /* Add a subtle, calming background gradient */
+    background-image: linear-gradient(170deg, hsl(40 50% 92% / 0.3) 0%, hsl(215 80% 90% / 0.3) 100%);
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar with the new theme */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(var(--secondary));
+    background: hsl(var(--secondary) / 0.5);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 3px;
+    background: hsl(var(--primary) / 0.6);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.5);
+    background: hsl(var(--primary));
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border rounded-2xl shadow-lg;
+    @apply bg-card/80 backdrop-blur-lg border border-border/60 rounded-2xl shadow-sm;
+    /* A softer, lighter glass effect */
+    background-image: linear-gradient(135deg, hsl(var(--card) / 0.7), hsl(var(--background) / 0.6));
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 
-  .gradient-border {
-    @apply relative;
-    background: linear-gradient(var(--card), var(--card)) padding-box,
-                var(--gradient-primary) border-box;
-    border: 1px solid transparent;
+  /* Adding a new, subtle aurora-style animated gradient */
+  .aurora-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1; /* Behind content */
+    background-image: radial-gradient(ellipse at 25% 25%, hsl(var(--primary) / 0.15), transparent 50%),
+                      radial-gradient(ellipse at 75% 75%, hsl(var(--accent) / 0.15), transparent 50%);
+    animation: aurora 20s infinite linear;
+    opacity: 0.5;
   }
 
-  .glow-effect {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(187 92% 50% / 0.3); }
-    50% { box-shadow: 0 0 40px hsl(187 92% 50% / 0.5); }
+  @keyframes aurora {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
