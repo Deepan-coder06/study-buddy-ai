@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, Loader2, Github } from 'lucide-react';
 import GoogleIcon from '../icons/GoogleIcon';
 
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signInWithPopup 
+} from "firebase/auth";
+
+import { auth, googleProvider, githubProvider } from "../../firebase";
+
 interface AuthScreenProps {
   onLogin: (name: string, email: string) => void;
 }
@@ -13,22 +21,81 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅ Email/Password Login & Register
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      let userCredential;
+
+      if (isRegister) {
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      } else {
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      }
+
+      const user = userCredential.user;
+      onLogin(user.displayName || name || "Student", user.email || "");
+
+    } catch (error: any) {
+      console.error(error);
+
+      let message = "Authentication failed. Please try again.";
+
+      if (error.code === "auth/email-already-in-use") {
+        message = "This email is already registered. Please sign in.";
+      } else if (error.code === "auth/invalid-credential") {
+        message = "Invalid email or password. Please try again.";
+      } else if (error.code === "auth/weak-password") {
+        message = "Password is too weak. Must be at least 6 characters.";
+      } else if (error.code) {
+        message = error.code.replace("auth/", "").replace(/-/g, " ");
+      }
+
+      alert(`Error: ${message}`);
+    } finally {
       setIsLoading(false);
-      onLogin(name || "Student", email || "student@university.edu");
-    }, 1500);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
+  // ✅ Google / GitHub Login
+  const handleSocialLogin = async (provider: "Google" | "Github") => {
     setIsLoading(true);
-    // In production, this would redirect to OAuth provider
-    setTimeout(() => {
+
+    try {
+      const selectedProvider =
+        provider === "Google" ? googleProvider : githubProvider;
+
+      const result = await signInWithPopup(auth, selectedProvider);
+      const user = result.user;
+
+      onLogin(user.displayName || "Student", user.email || "");
+
+    } catch (error: any) {
+      console.error("Social Login Error:", error);
+      
+      let message = "Social login failed. Please try again.";
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        message = "An account already exists with this email address. Please sign in with your original method.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        message = "Login process was cancelled. Please try again.";
+      } else if (error.code) {
+        message = error.code.replace("auth/", "").replace(/-/g, " ");
+      }
+
+      alert(`Error: ${message}`);
+    } finally {
       setIsLoading(false);
-      onLogin(`${provider} User`, `user@${provider.toLowerCase()}.com`);
-    }, 1500);
+    }
   };
 
   return (
@@ -86,10 +153,11 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
               <input 
                 type="password" 
                 required
+                minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-input border border-border rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                placeholder="••••••••"
+                placeholder="Minimum 6 characters"
               />
             </div>
           </div>
@@ -116,7 +184,7 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
         <div className="grid grid-cols-2 gap-3 mb-6">
           <button 
             type="button"
-            onClick={() => handleSocialLogin('Google')}
+            onClick={() => handleSocialLogin("Google")}
             disabled={isLoading}
             className="flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold py-2.5 rounded-xl hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50"
           >
@@ -124,7 +192,7 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           </button>
           <button 
             type="button"
-            onClick={() => handleSocialLogin('Github')}
+            onClick={() => handleSocialLogin("Github")}
             disabled={isLoading}
             className="flex items-center justify-center gap-2 bg-[#24292F] text-white font-semibold py-2.5 rounded-xl hover:bg-[#24292F]/90 transition-all active:scale-95 disabled:opacity-50"
           >

@@ -32,12 +32,12 @@ interface Attachment {
   category: 'image' | 'pdf' | 'text' | 'other';
 }
 
-const Index = () => {
-  // Auth State
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+interface IndexProps {
+  user: { name: string; email: string } | null;
+  onLogin: (name: string, email: string) => void;
+}
 
+const Index = ({ user, onLogin }: IndexProps) => {
   // UI State
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,6 +67,17 @@ const Index = () => {
     { id: 2, title: "Study Data Structures", priority: "Medium", completed: false },
   ]);
   const [loadingPlan, setLoadingPlan] = useState(false);
+  
+  const [userName, setUserName] = useState(user?.name || "");
+  const [userEmail, setUserEmail] = useState(user?.email || "");
+
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name);
+      setUserEmail(user.email);
+    }
+  }, [user]);
+
 
   // Helper Functions
   const triggerNotification = (msg: string) => {
@@ -204,16 +215,8 @@ const Index = () => {
     }
   };
 
-  const handleLogin = (name: string, email: string) => {
-    setUserName(name);
-    setUserEmail(email);
-    setIsLoggedIn(true);
-  };
-
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserName("");
-    setUserEmail("");
+    onLogin("", "");
   };
 
   const handleProfileSave = () => {
@@ -221,11 +224,11 @@ const Index = () => {
   };
 
   // Render Auth Screen
-  if (!isLoggedIn) {
+  if (!user) {
     return (
       <>
         <FluidCursor />
-        <AuthScreen onLogin={handleLogin} />
+        <AuthScreen onLogin={onLogin} />
       </>
     );
   }
