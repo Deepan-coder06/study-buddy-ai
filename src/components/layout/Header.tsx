@@ -6,23 +6,22 @@ interface HeaderProps {
 
 const Header = ({ onMenuOpen }: HeaderProps) => {
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-border z-50 p-4 md:px-8 px-4 flex justify-between items-center shadow-md">
-      {/* Add the aurora effect behind the header */}
-      <div className="aurora-bg"></div>
-
-      <h1 className="text-2xl font-bold z-10">
-        <span className="gradient-text">StudentLife</span>
-        <span className="font-light">OS</span>
-      </h1>
-
-      <button 
-        onClick={onMenuOpen}
-        className="p-2 rounded-xl glass-card text-primary transition-all hover:bg-secondary z-10"
-      >
-        <Menu size={28} />
-      </button>
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
+      <div className="max-w-4xl mx-auto flex items-center justify-between p-4">
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-lg text-primary-foreground">
+                S
+            </div>
+          <h1 className="text-xl font-bold">StudentLifeOS</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={onMenuOpen} className="btn-icon md:hidden">
+            <Menu size={24} />
+          </button>
+        </div>
+      </div>
     </header>
   );
-};
+}
 
 export default Header;

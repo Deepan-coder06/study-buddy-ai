@@ -5,94 +5,74 @@ import GoogleIcon from '../icons/GoogleIcon';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
-  signInWithPopup 
+  signInWithPopup,
+  updateProfile
 } from "firebase/auth";
 
-import { auth, googleProvider, githubProvider } from "../../firebase";
+import { auth, googleProvider, githubProvider } from "@/firebase";
 
-interface AuthScreenProps {
-  onLogin: (name: string, email: string) => void;
-}
-
-const AuthScreen = ({ onLogin }: AuthScreenProps) => {
+const AuthScreen = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean | string>(false);
+  const [error, setError] = useState("");
 
-  // ✅ Email/Password Login & Register
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoading(isRegister ? 'register' : 'login');
+    setError("");
+
+    if (!email || !password || (isRegister && !name)) {
+        setError("Please fill in all fields.");
+        setIsLoading(false);
+        return;
+    }
 
     try {
-      let userCredential;
-
       if (isRegister) {
-        userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
       } else {
-        userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        await signInWithEmailAndPassword(auth, email, password);
       }
-
-      const user = userCredential.user;
-      onLogin(user.displayName || name || "Student", user.email || "");
-
-    } catch (error: any) {
-      console.error(error);
-
+      // No need to call onLogin, Firebase auth state change is handled by App.tsx
+    } catch (err: any) {
       let message = "Authentication failed. Please try again.";
-
-      if (error.code === "auth/email-already-in-use") {
+      if (err.code === "auth/email-already-in-use") {
         message = "This email is already registered. Please sign in.";
-      } else if (error.code === "auth/invalid-credential") {
+      } else if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
         message = "Invalid email or password. Please try again.";
-      } else if (error.code === "auth/weak-password") {
+      } else if (err.code === "auth/weak-password") {
         message = "Password is too weak. Must be at least 6 characters.";
-      } else if (error.code) {
-        message = error.code.replace("auth/", "").replace(/-/g, " ");
       }
-
-      alert(`Error: ${message}`);
+      setError(message);
+      console.error("Firebase Auth Error:", err.code, err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Google / GitHub Login
   const handleSocialLogin = async (provider: "Google" | "Github") => {
-    setIsLoading(true);
+    setIsLoading(provider);
+    setError("");
 
     try {
-      const selectedProvider =
-        provider === "Google" ? googleProvider : githubProvider;
-
-      const result = await signInWithPopup(auth, selectedProvider);
-      const user = result.user;
-
-      onLogin(user.displayName || "Student", user.email || "");
-
-    } catch (error: any) {
-      console.error("Social Login Error:", error);
-      
+      const authProvider = provider === "Google" ? googleProvider : githubProvider;
+      await signInWithPopup(auth, authProvider);
+      // No need to call onLogin, Firebase auth state change is handled by App.tsx
+    } catch (err: any) {
       let message = "Social login failed. Please try again.";
-      if (error.code === 'auth/account-exists-with-different-credential') {
+      if (err.code === 'auth/account-exists-with-different-credential') {
         message = "An account already exists with this email address. Please sign in with your original method.";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        message = "Login process was cancelled. Please try again.";
-      } else if (error.code) {
-        message = error.code.replace("auth/", "").replace(/-/g, " ");
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        message = "Login process was cancelled."; // Don't show as an error
+        setError("");
+      } else {
+        setError(message);
       }
-
-      alert(`Error: ${message}`);
+      console.error("Social Login Error:", err.code, err.message);
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +80,6 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[100px] animate-float" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-accent/20 rounded-full blur-[100px] animate-float" style={{ animationDelay: '3s' }} />
 
@@ -112,6 +91,12 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           </h1>
           <p className="text-muted-foreground">Your AI Guardian for Health & Success</p>
         </div>
+
+        {error && (
+            <div className="bg-destructive/20 text-destructive text-sm p-3 rounded-lg mb-4 text-center animate-shake">
+                {error}
+            </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
@@ -164,10 +149,10 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
 
           <button 
             type="submit" 
-            disabled={isLoading}
+            disabled={!!isLoading}
             className="w-full bg-gradient-primary text-primary-foreground font-bold py-3 rounded-xl shadow-lg glow-effect transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
           >
-            {isLoading ? <Loader2 className="animate-spin" /> : (
+            {isLoading === (isRegister ? 'register' : 'login') ? <Loader2 className="animate-spin" /> : (
               <>
                 {isRegister ? 'Create Account' : 'Sign In'} <ArrowRight size={20} />
               </>
@@ -185,18 +170,18 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           <button 
             type="button"
             onClick={() => handleSocialLogin("Google")}
-            disabled={isLoading}
+            disabled={!!isLoading}
             className="flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold py-2.5 rounded-xl hover:bg-slate-100 transition-all active:scale-95 disabled:opacity-50"
           >
-            <GoogleIcon className="w-5 h-5" /> Google
+            {isLoading === 'Google' ? <Loader2 className="animate-spin"/> : <><GoogleIcon className="w-5 h-5" /> Google</>}
           </button>
           <button 
             type="button"
             onClick={() => handleSocialLogin("Github")}
-            disabled={isLoading}
+            disabled={!!isLoading}
             className="flex items-center justify-center gap-2 bg-[#24292F] text-white font-semibold py-2.5 rounded-xl hover:bg-[#24292F]/90 transition-all active:scale-95 disabled:opacity-50"
           >
-            <Github size={20} /> Github
+             {isLoading === 'Github' ? <Loader2 className="animate-spin"/> : <><Github size={20} /> Github</>}
           </button>
         </div>
 
@@ -204,7 +189,7 @@ const AuthScreen = ({ onLogin }: AuthScreenProps) => {
           <p className="text-muted-foreground text-sm">
             {isRegister ? "Already have an account?" : "Don't have an account?"}
             <button 
-              onClick={() => setIsRegister(!isRegister)}
+              onClick={() => { setIsRegister(!isRegister); setError(""); }}
               className="ml-2 text-primary hover:text-primary/80 font-semibold transition-colors"
             >
               {isRegister ? 'Sign In' : 'Register Now'}

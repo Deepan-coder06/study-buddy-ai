@@ -1,101 +1,109 @@
-import { useState } from 'react';
-import { Moon, Activity, CheckCircle2, Brain, Coffee, Sparkles, Loader2 } from 'lucide-react';
+import { Zap, Moon, ListChecks, BrainCircuit, Wind, Sun } from 'lucide-react';
+
+interface Task {
+  id: number;
+  title: string;
+  priority: 'High' | 'Medium' | 'Low';
+  completed: boolean;
+}
 
 interface DashboardProps {
   userName: string;
   sleepHours: number;
   setSleepHours: (hours: number) => void;
   energyLevel: number;
-  tasks: Array<{ id: number; completed: boolean }>;
+  tasks: Task[];
   dailyInsight: string;
   loadingInsight: boolean;
   onGenerateInsight: () => void;
+  onGoToStudyPlan: () => void;
 }
 
-const Dashboard = ({
-  userName,
-  sleepHours,
-  setSleepHours,
+const StatCard = ({ icon, title, value, unit, color }: any) => (
+  <div className="glass-card flex flex-col items-center justify-center p-4 h-32">
+    <div className={`flex items-center justify-center h-10 w-10 rounded-full mb-2 ${color}`}>
+      {icon}
+    </div>
+    <p className="text-sm text-muted-foreground">{title}</p>
+    <p className="font-bold text-lg">{value} <span className="text-xs">{unit}</span></p>
+  </div>
+);
+
+const Dashboard = ({ 
+  userName, 
+  sleepHours, 
+  setSleepHours, 
   energyLevel,
   tasks,
   dailyInsight,
   loadingInsight,
   onGenerateInsight,
+  onGoToStudyPlan
 }: DashboardProps) => {
-  const sleepPercentage = Math.round((sleepHours / 8) * 100);
+
   const completedTasks = tasks.filter(t => t.completed).length;
+  const stressLevel = sleepHours < 6 ? 'High' : (sleepHours < 7.5 ? 'Normal' : 'Low');
+  const breaksTaken = 2; // Static for now
 
   return (
-    <div className="space-y-6 animate-slide-in-bottom">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Welcome Card & AI Insight */}
-        <div className="glass-card p-4 sm:p-6 flex flex-col justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Welcome Back, {userName}! 🎓</h2>
-            <p className="text-muted-foreground mb-3 sm:mb-4">
-              {dailyInsight || "Your AI analysis suggests a productive evening based on your energy levels."}
-            </p>
-          </div>
-          <button 
-            onClick={onGenerateInsight}
-            disabled={loadingInsight}
-            className="self-start bg-accent/20 hover:bg-accent/30 border border-accent/50 text-accent-foreground text-sm px-4 py-2 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50"
-          >
-            {loadingInsight ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-            {loadingInsight ? "Analyzing Health..." : "Get AI Daily Insight"}
-          </button>
-        </div>
+    <div className="animate-slide-in-bottom space-y-8">
+      
+      {/* Header */}
+      <h1 className="text-3xl font-bold">Welcome back, {userName.split(' ')[0]}!</h1>
 
-        {/* Sleep Tracker */}
-        <div className="glass-card p-4 sm:p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Moon className="text-accent" /> Sleep Tracker
-              </h3>
-              <p className="text-2xl sm:text-3xl font-bold mt-2">{sleepHours} hrs</p>
-            </div>
-            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full border-4 border-accent flex items-center justify-center bg-accent/10 flex-shrink-0">
-              <span className="text-sm font-bold">{sleepPercentage}%</span>
-            </div>
+      {/* AI Insight Section */}
+      <div className="glass-card p-6 flex flex-col md:flex-row items-center gap-4">
+        <div className="flex-shrink-0">
+          <Sun className="w-10 h-10 text-yellow-400" />
+        </div>
+        <div className="flex-grow">
+          <h2 className="font-bold text-lg">AI Daily Insight</h2>
+          <p className="text-muted-foreground text-sm h-12 overflow-y-auto">
+            {loadingInsight ? 'Generating your personal insight...' : (dailyInsight || 'Click the button for your personalized tip!')}
+          </p>
+        </div>
+        <button onClick={onGenerateInsight} disabled={loadingInsight} className="btn btn-secondary w-full md:w-auto">
+          {loadingInsight ? 'Thinking...' : 'Get Daily Insight'}
+        </button>
+      </div>
+
+      {/* Sleep & Plan Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="glass-card p-6">
+          <h2 className="font-bold text-lg flex items-center gap-2 mb-3"><Moon size={20} /> Last Night's Sleep</h2>
+          <div className="flex items-center gap-4">
+            <input 
+              type="range" 
+              min="0" 
+              max="12" 
+              step="0.5" 
+              value={sleepHours} 
+              onChange={(e) => setSleepHours(parseFloat(e.target.value))} 
+              className="w-full"
+            />
+            <span className="font-bold text-primary w-20 text-center">{sleepHours} hrs</span>
           </div>
-          <input 
-            type="range" 
-            min="0" 
-            max="12" 
-            value={sleepHours} 
-            onChange={(e) => setSleepHours(parseInt(e.target.value))}
-            className="w-full mt-4 h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-accent"
-          />
-          <p className="text-xs text-muted-foreground mt-2">Slide to adjust last night's sleep</p>
+          <p className="text-xs text-center text-muted-foreground mt-2">Slide to adjust last night's sleep.</p>
+        </div>
+        <div className="glass-card p-6 flex flex-col items-center justify-center text-center">
+            <h2 className="font-bold text-lg flex items-center gap-2 mb-2"><BrainCircuit size={20} /> AI Study Plan</h2>
+            <p className="text-muted-foreground text-sm mb-4">Ready to learn something new? Let the AI create a plan for you.</p>
+            <button onClick={onGoToStudyPlan} className="btn btn-secondary w-full">
+              Create a Magic Plan
+            </button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
-          <Activity className="mx-auto text-success mb-2" />
-          <div className="text-xl sm:text-2xl font-bold">{energyLevel}%</div>
-          <div className="text-xs text-muted-foreground">Energy</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
-          <CheckCircle2 className="mx-auto text-primary mb-2" />
-          <div className="text-xl sm:text-2xl font-bold">{completedTasks}/{tasks.length}</div>
-          <div className="text-xs text-muted-foreground">Tasks</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
-          <Brain className="mx-auto text-accent mb-2" />
-          <div className="text-xl sm:text-2xl font-bold">Normal</div>
-          <div className="text-xs text-muted-foreground">Stress</div>
-        </div>
-        <div className="glass-card p-3 sm:p-4 text-center hover:scale-105 transition-transform">
-          <Coffee className="mx-auto text-warning mb-2" />
-          <div className="text-xl sm:text-2xl font-bold">2</div>
-          <div className="text-xs text-muted-foreground">Breaks</div>
-        </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+        <StatCard icon={<Zap size={20} />} title="Energy" value={`${energyLevel}%`} color="bg-green-500/20 text-green-400" />
+        <StatCard icon={<ListChecks size={20} />} title="Tasks" value={`${completedTasks}/${tasks.length}`} color="bg-blue-500/20 text-blue-400" />
+        <StatCard icon={<BrainCircuit size={20} />} title="Stress" value={stressLevel} color="bg-yellow-500/20 text-yellow-400" />
+        <StatCard icon={<Wind size={20} />} title="Breaks" value={breaksTaken} unit="taken" color="bg-indigo-500/20 text-indigo-400" />
       </div>
+
     </div>
   );
-};
+}
 
 export default Dashboard;

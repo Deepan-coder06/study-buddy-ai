@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Send, Mic, MicOff, Plus, X, Loader2, Volume2, VolumeX, FileText } from 'lucide-react';
+import { Send, Mic, Volume2, VolumeX, Trash2, Paperclip, X } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'model';
@@ -22,155 +22,125 @@ interface AIChatProps {
   onToggleTts: () => void;
   onVoiceInput: () => void;
   onSendMessage: (message: string, attachment?: Attachment | null) => void;
+  onClearChat: () => void;
 }
 
-const AIChat = ({
-  chatHistory,
-  isAiThinking,
+const AIChat = ({ 
+  chatHistory, 
+  isAiThinking, 
   isSpeaking,
   isListening,
   isTtsEnabled,
   onToggleTts,
   onVoiceInput,
   onSendMessage,
+  onClearChat
 }: AIChatProps) => {
-  const [chatInput, setChatInput] = useState('');
+
+  const [message, setMessage] = useState('');
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    const isImage = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf';
-    const isText = file.type.startsWith('text/') || file.name.endsWith('.md');
-
-    reader.onload = (event) => {
-      setAttachment({
-        name: file.name,
-        type: file.type,
-        data: event.target?.result as string,
-        category: isImage ? 'image' : (isPdf ? 'pdf' : (isText ? 'text' : 'other'))
-      });
+    reader.onload = (e) => {
+        const base64Data = (e.target?.result as string).split(',')[1];
+        let category: Attachment['category'] = 'other';
+        if (file.type.startsWith('image/')) category = 'image';
+        else if (file.type === 'application/pdf') category = 'pdf';
+        else if (file.type.startsWith('text/')) category = 'text';
+        
+        setAttachment({ name: file.name, type: file.type, data: base64Data, category });
     };
+    reader.readAsDataURL(file);
+    event.target.value = ''; // Reset file input
+  };
 
-    if (isText) {
-      reader.readAsText(file);
-    } else {
-      reader.readAsDataURL(file);
+  const handleSend = () => {
+    if (message.trim() || attachment) {
+      onSendMessage(message, attachment);
+      setMessage('');
+      setAttachment(null);
     }
   };
 
-  const handleSubmit = () => {
-    if (!chatInput.trim() && !attachment) return;
-    onSendMessage(chatInput, attachment);
-    setChatInput('');
-    setAttachment(null);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)] sm:h-[calc(100vh-220px)] md:h-[600px] animate-fade-in relative">
-      <div className="absolute top-0 right-4 flex items-center gap-2 z-10">
-        <button 
-          onClick={onToggleTts}
-          className={`p-2 rounded-full transition-all ${isTtsEnabled ? 'text-primary bg-primary/20' : 'text-muted-foreground bg-secondary'}`}
-          title={isTtsEnabled ? "Mute Voice" : "Enable Voice"}
-        >
-          {isTtsEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-        </button>
+    <div className="animate-slide-in-bottom flex flex-col h-[calc(100vh-200px)] max-h-[700px] glass-card p-4">
+      
+      <div className="flex justify-between items-center pb-4 border-b border-white/10">
+        <h2 className="text-xl font-bold">AI Chat</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={onToggleTts} className="btn-icon" title={isTtsEnabled ? "Disable TTS" : "Enable TTS"}>
+            {isTtsEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
+          <button onClick={onClearChat} className="btn-icon text-destructive" title="Clear Chat">
+            <Trash2 size={20} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 glass-card p-2 sm:p-4 overflow-y-auto space-y-4 mb-4 mt-10 md:mt-0">
-        {chatHistory.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-2.5 sm:p-3 rounded-2xl shadow-sm ${
-              msg.role === 'user' 
-                ? 'bg-gradient-primary text-primary-foreground rounded-br-none' 
-                : 'bg-secondary text-foreground rounded-bl-none'
-            }`}>
-              {msg.text}
+      <div className="flex-grow overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {chatHistory.map((msg, index) => (
+          <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 mt-1"></div>}
+            <div className={`max-w-md p-3 rounded-xl ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}>
+              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
             </div>
           </div>
         ))}
         {isAiThinking && (
-          <div className="flex justify-start">
-            <div className="bg-secondary text-foreground p-3 rounded-2xl rounded-bl-none flex items-center gap-2">
-              <Loader2 className="animate-spin" size={16} /> Thinking...
-            </div>
-          </div>
-        )}
-        {isSpeaking && (
-          <div className="flex justify-start">
-            <div className="text-xs text-primary flex items-center gap-1 animate-pulse">
-              <Volume2 size={12} /> Speaking...
+          <div className="flex gap-3 items-start justify-start">
+            <div className="w-8 h-8 rounded-full bg-primary flex-shrink-0 mt-1 animate-pulse"></div>
+            <div className="max-w-md p-3 rounded-xl bg-muted/50">
+              <p className="text-sm">Leo is typing...</p>
             </div>
           </div>
         )}
       </div>
 
-      {attachment && (
-        <div className="absolute bottom-[72px] sm:bottom-24 left-0 ml-2 mb-2 glass-card p-2 flex items-center gap-3 animate-scale-in z-20">
-          <div className="w-8 h-8 bg-secondary rounded flex items-center justify-center">
-            {attachment.category === 'image' ? (
-              <img src={attachment.data} alt="preview" className="w-full h-full object-cover rounded" />
-            ) : (
-              <FileText size={16} className="text-muted-foreground" />
-            )}
-          </div>
-          <div className="text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-[150px]">{attachment.name}</div>
-          <button onClick={() => setAttachment(null)} className="hover:text-foreground text-muted-foreground">
-            <X size={14} />
-          </button>
+      <div className="mt-4 pt-4 border-t border-white/10">
+        {attachment && (
+            <div className="mb-2 flex items-center justify-between bg-secondary/50 px-3 py-2 rounded-lg text-sm">
+                <p className="font-semibold">Attached: <span className="font-light text-muted-foreground">{attachment.name}</span></p>
+                <button onClick={() => setAttachment(null)} className="btn-icon h-7 w-7"><X size={16}/></button>
+            </div>
+        )}
+        <div className="flex items-center gap-2 p-2 rounded-xl bg-muted/50 border border-white/10 focus-within:border-primary transition-colors">
+            <input 
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask or upload a file..."
+              className="flex-grow bg-transparent focus:outline-none px-2"
+              disabled={isAiThinking}
+            />
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+            <button onClick={() => fileInputRef.current?.click()} className="btn-icon" title="Attach File" disabled={isAiThinking}>
+              <Paperclip size={20} />
+            </button>
+            <button onClick={onVoiceInput} className={`btn-icon ${isListening ? 'text-destructive' : ''}`} title="Voice Input" disabled={isAiThinking}>
+              <Mic size={20} />
+            </button>
+            <button onClick={handleSend} className="btn-icon bg-primary text-primary-foreground" title="Send" disabled={isAiThinking || (!message.trim() && !attachment)}>
+              <Send size={20} />
+            </button>
         </div>
-      )}
-
-      <div className="flex gap-2 relative items-center">
-        <button 
-          onClick={() => fileInputRef.current?.click()}
-          className="p-3 glass-card text-muted-foreground hover:text-foreground transition-colors"
-          title="Attach file"
-        >
-          <Plus size={24} />
-        </button>
-
-        <input
-          type="text"
-          value={chatInput}
-          onChange={(e) => setChatInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-          placeholder="Ask or upload a file..."
-          className="flex-1 bg-input border border-border rounded-xl px-4 py-3 text-sm sm:text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-          disabled={isAiThinking}
-        />
-        
-        <button 
-          onClick={onVoiceInput}
-          className={`p-3 rounded-xl border transition-all ${
-            isListening 
-              ? 'bg-destructive/20 border-destructive text-destructive animate-pulse' 
-              : 'glass-card text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          {isListening ? <MicOff size={24} /> : <Mic size={24} />}
-        </button>
-        
-        <button 
-          onClick={handleSubmit}
-          disabled={isAiThinking || (!chatInput.trim() && !attachment)}
-          className="p-3 bg-gradient-primary text-primary-foreground rounded-xl transition-all hover:opacity-90 disabled:opacity-50 flex-shrink-0"
-        >
-          <Send size={24} />
-        </button>
-        <input type="file" hidden ref={fileInputRef} onChange={handleFileSelect} accept="image/*,.txt,.md,.pdf"/>
       </div>
-      
-      <p className="text-xs text-center text-muted-foreground mt-2">
-        StudentLifeOS AI can make mistakes. Please verify important info.
-      </p>
+
+      <p className="text-xs text-center text-muted-foreground mt-2">StudentLifeOS AI can make mistakes. Please verify important info.</p>
     </div>
   );
-};
+}
 
 export default AIChat;
