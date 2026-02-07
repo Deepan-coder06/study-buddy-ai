@@ -1,5 +1,6 @@
 import { db } from '@/firebase';
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { placementData } from './placementData';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -95,7 +96,7 @@ export async function sendChatMessage(
   const systemInstruction = {
     role: "system", // This role is only used internally for instruction
     parts: [{
-      text: `You are Leo, a friendly AI tutor for ${userName}. They slept ${sleepHours} hours. Keep answers concise and encouraging.`
+      text: `You are an expert career guidance and placement support assistant for students at SRM University. Your name is Leo. You have access to the following placement calendar data: ${placementData}. Help ${userName} with their career questions. Be encouraging and provide clear, actionable advice. The student slept ${sleepHours} hours, consider this when interacting with them.`
     }]
   };
 
